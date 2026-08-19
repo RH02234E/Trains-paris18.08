@@ -1,0 +1,148 @@
+:root{
+  --gold-1:#f4c542;
+  --gold-2:#e0962a;
+  --ink:#0b0b0d;
+  --ink-2:#1c1d22;
+  --line:#e6e6e9;
+  --text:#20212a;
+  --muted:#767680;
+  --stripe:#fafafa;
+  --eurostar-bg:#fff2cf;
+  --bg:#f4f4f6;
+  --card:#ffffff;
+  --radius:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;height:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+header.app-header{
+  position:sticky;top:0;z-index:20;
+  background:linear-gradient(135deg,var(--ink) 0%,var(--ink-2) 100%);
+  color:#fff;
+  padding:calc(14px + env(safe-area-inset-top)) 18px 12px;
+  display:flex;align-items:center;gap:12px;
+  border-bottom:3px solid var(--gold-1);
+}
+header.app-header img{width:38px;height:38px;border-radius:10px;flex-shrink:0;}
+header.app-header .brand{font-size:17px;font-weight:800;color:var(--gold-1);}
+header.app-header .date{font-size:11px;color:#c9c9ce;margin-top:1px;}
+header.app-header .install-btn{
+  margin-left:auto;background:var(--gold-1);color:var(--ink);border:none;
+  padding:7px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;
+  display:none;
+}
+header.app-header .install-btn.show{display:inline-block;}
+
+nav.tabs{
+  position:sticky;top:calc(64px + env(safe-area-inset-top));z-index:19;
+  display:flex;gap:6px;overflow-x:auto;padding:10px 14px;
+  background:var(--bg);border-bottom:1px solid var(--line);
+  -webkit-overflow-scrolling:touch;
+}
+nav.tabs button{
+  appearance:none;border:1px solid var(--line);background:var(--card);
+  color:var(--text);padding:8px 14px;border-radius:20px;
+  font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;
+}
+nav.tabs button.active{background:var(--ink);color:var(--gold-1);border-color:var(--ink);}
+
+main{padding:16px 14px 40px;max-width:720px;margin:0 auto;}
+
+.section-title{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:18px 4px 8px;}
+.section-title:first-child{margin-top:2px;}
+
+.global-card{
+  background:linear-gradient(135deg,var(--ink) 0%,var(--ink-2) 100%);
+  color:#fff;border-radius:var(--radius);padding:18px;margin-bottom:6px;
+}
+.global-card .big{font-size:28px;font-weight:800;color:var(--gold-1);}
+.global-card .lbl{font-size:12px;color:#c9c9ce;margin-top:2px;}
+.global-card .txt{font-size:13px;color:#e6e6ea;margin-top:10px;line-height:1.5;}
+
+.gare-card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:box-shadow .15s;
+}
+.gare-card:active{box-shadow:0 0 0 2px var(--gold-1) inset;}
+.gare-card .row-top{display:flex;justify-content:space-between;align-items:baseline;}
+.gare-card .name{font-size:15.5px;font-weight:800;}
+.gare-card .total{font-size:20px;font-weight:800;color:var(--ink);}
+.gare-card .total span{font-size:11px;font-weight:600;color:var(--muted);}
+.gare-card .best{
+  margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;
+}
+.pill{
+  display:inline-flex;align-items:center;gap:4px;
+  background:#fff3d0;color:#8a5a00;border:1px solid #f0d68a;
+  padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;
+}
+.pill.muted{background:#eef0f3;color:#43505c;border-color:var(--line);}
+.spark{display:flex;align-items:flex-end;gap:2px;height:32px;margin-top:10px;}
+.spark i{
+  display:block;flex:1;background:var(--gold-1);border-radius:2px 2px 0 0;min-height:2px;opacity:.85;
+}
+.spark i.zero{background:#e9e9ec;}
+
+.detail-header{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;margin-bottom:14px;
+}
+.detail-header h2{margin:0 0 4px;font-size:18px;}
+.detail-header .sub{font-size:12.5px;color:var(--muted);}
+.detail-header .txt{font-size:13px;margin-top:10px;line-height:1.5;background:#fff8e6;border:1px solid #f0d68a;border-radius:10px;padding:10px 12px;color:#5c4300;}
+.detail-header .best-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+
+.toggle{
+  display:inline-flex;background:#eee;border-radius:20px;padding:3px;margin-top:12px;
+}
+.toggle button{
+  appearance:none;border:none;background:transparent;padding:6px 14px;border-radius:16px;
+  font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;
+}
+.toggle button.active{background:var(--ink);color:var(--gold-1);}
+
+.slot{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  margin-bottom:8px;overflow:hidden;
+}
+.slot.empty{opacity:.45;}
+.slot-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:11px 14px;cursor:pointer;
+}
+.slot-head .range{font-weight:800;font-size:13.5px;font-variant-numeric:tabular-nums;}
+.slot-head .count{font-size:12px;color:var(--muted);font-weight:700;}
+.slot-head .count.hot{color:#b3105f;}
+.slot-body{display:none;border-top:1px solid var(--line);}
+.slot.open .slot-body{display:block;}
+.slot.open .slot-head{background:#faf8f2;}
+.trow{
+  display:flex;gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid #f2f2f4;
+  font-size:12.5px;
+}
+.trow:last-child{border-bottom:none;}
+.trow .h{font-weight:800;font-variant-numeric:tabular-nums;width:38px;flex-shrink:0;}
+.trow .num{width:56px;flex-shrink:0;color:var(--muted);}
+.trow .badge{
+  padding:2px 8px;border-radius:20px;font-size:10px;font-weight:800;white-space:nowrap;flex-shrink:0;
+}
+.trow .badge.tgv{background:#e1ecff;color:#0f4fb3;}
+.trow .badge.ouigo{background:#ffe1ee;color:#b3105f;}
+.trow .badge.ic{background:#dff5e6;color:#137a38;}
+.trow .badge.icn{background:#e8eaed;color:#3a4650;}
+.trow .badge.intl{background:#eee0ff;color:#6a1fc9;}
+.trow .badge.eurostar{background:#ffe08a;color:#6e4600;}
+.trow .orig{flex:1;color:var(--text);}
+.trow.eurostar-row{background:var(--eurostar-bg);}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;}
+.legend .pill{font-size:10.5px;padding:2px 9px;}
+
+footer.app-footer{
+  max-width:720px;margin:20px auto 30px;padding:0 14px;color:var(--muted);font-size:11px;line-height:1.6;
+}

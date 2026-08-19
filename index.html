@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Vigietaxi — Arrivées gares parisiennes</title>
+<meta name="description" content="Suivi des arrivées grandes lignes dans les gares parisiennes, par créneaux, avec les meilleurs moments pour s'y positionner.">
+<meta name="theme-color" content="#0b0b0d">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vigietaxi">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <img src="icons/icon-192.png" alt="Vigietaxi">
+  <div>
+    <div class="brand">Vigietaxi</div>
+    <div class="date" id="app-date">Chargement…</div>
+  </div>
+  <button id="install-btn" class="install-btn">Installer</button>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+
+<main id="app">
+  <div style="padding:40px 0;text-align:center;color:#767680;">Chargement des données…</div>
+</main>
+
+<footer class="app-footer">
+  Sources : horaires théoriques SNCF Open Data (grandes lignes) et eurostar.com pour Londres → Gare du Nord.
+  Horaires prévus, pas temps réel. Document préparé pour Vigietaxi.fr.
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
