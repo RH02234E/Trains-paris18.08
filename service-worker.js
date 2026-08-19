@@ -5,12 +5,12 @@ const APP_SHELL = [
   "./style.css",
   "./app.js",
   "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png",
-  "./icons/favicon-32.png",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./apple-touch-icon.png",
+  "./favicon-32.png",
+  "./data.json",
 ];
-const DATA_URL = "./data/data.json";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -30,7 +30,7 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
-  const isData = url.pathname.endsWith("/data/data.json");
+  const isData = url.pathname.endsWith("/data.json");
 
   if (isData) {
     // network-first for the schedule data: always try to get the freshest version,

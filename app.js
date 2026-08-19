@@ -24,11 +24,25 @@ function fmtDate(iso){
 }
 
 async function loadData(){
-  const res = await fetch("data/data.json", { cache: "no-store" });
-  DATA = await res.json();
-  document.getElementById("app-date").textContent = fmtDate(DATA.date);
-  renderTabs();
-  render();
+  try {
+    const res = await fetch("data.json", { cache: "no-store" });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    DATA = await res.json();
+    document.getElementById("app-date").textContent = fmtDate(DATA.date);
+    renderTabs();
+    render();
+  } catch (err) {
+    document.getElementById("app-date").textContent = "Erreur de chargement";
+    $app.innerHTML = `
+      <div style="padding:30px 16px;text-align:center;color:#767680;">
+        <p style="font-weight:700;color:#20212a;margin-bottom:8px;">Impossible de charger les données</p>
+        <p style="font-size:13px;">Le fichier <code>data.json</code> est introuvable à côté de <code>index.html</code>
+        sur ton dépôt GitHub. Vérifie qu'il a bien été uploadé au même niveau que les autres fichiers
+        (pas dans un sous-dossier).</p>
+        <p style="font-size:11px;margin-top:10px;color:#a0a0a8;">Détail technique : ${err.message}</p>
+      </div>
+    `;
+  }
 }
 
 function renderTabs(){
