@@ -1,0 +1,39 @@
+name: Mise à jour quotidienne des horaires
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances
+        run: pip install -r scripts/requirements.txt
+
+      - name: Générer data.json
+        run: python scripts/generate_data.py
+
+      - name: Commit et push si changement
+        run: |
+          git config user.name "vigietaxi-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if git diff --quiet -- data.json; then
+            echo "Aucun changement dans data.json, rien à committer."
+          else
+            git add data.json
+            git commit -m "Mise à jour automatique des horaires ($(date -u +%Y-%m-%d))"
+            git push
+          fi
