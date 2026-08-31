@@ -44,7 +44,14 @@ Reconstruit le fichier data.json de la PWA à partir de plusieurs sources :
 Usage :
     python scripts/generate_data.py [YYYY-MM-DD]
 
-Sans argument, utilise "aujourd'hui" en heure de Paris.
+Sans argument, utilise "aujourd'hui" en heure de Paris, et ne garde QUE les
+trains dont l'heure d'arrivée est encore à venir au moment précis où le
+script tourne (heure de Paris) — que ce run soit le cron automatique du
+matin ou un déclenchement manuel (workflow_dispatch) en plein après-midi.
+Avec une date explicite en argument (génération pour une date différente
+d'aujourd'hui), ce filtrage "restant" ne s'applique pas : la journée
+complète est générée, car "ce qu'il reste" n'a pas de sens pour une date
+qui n'est pas la date du run.
 """
 
 import io
@@ -382,7 +389,7 @@ def slot_label(start_min, size):
     return f"{h:02d}:{m:02d}", f"{eh:02d}:{em:02d}"
 
 
-def build_dataset(sncf_df, extra_by_station, date_iso):
+def build_dataset(sncf_df, extra_by_station, date_iso, min_minutes=None):
     trains_by_station = {}
     slots30_by_station = {}
     slots60_by_station = {}
@@ -404,6 +411,10 @@ def build_dataset(sncf_df, extra_by_station, date_iso):
             trains.append(dict(ev))
 
         trains.sort(key=lambda t: to_minutes(t["heure"] + ":00" if len(t["heure"]) == 5 else t["heure"]))
+
+        if min_minutes is not None:
+            trains = [t for t in trains if to_minutes(t["heure"]) >= min_minutes]
+
         trains_by_station[gare] = trains
 
         def in_range(tstr, start, size):
@@ -430,7 +441,8 @@ def build_dataset(sncf_df, extra_by_station, date_iso):
 
         top60 = sorted([s for s in slots60 if s["count"] > 0], key=lambda s: -s["count"])[:3]
         top30 = sorted([s for s in slots30 if s["count"] > 0], key=lambda s: -s["count"])[:3]
-        daytime60 = [s for s in slots60 if 6 * 60 <= to_minutes(s["start"]) <= 23 * 60]
+        daytime_start = min_minutes if min_minutes is not None else 6 * 60
+        daytime60 = [s for s in slots60 if daytime_start <= to_minutes(s["start"]) <= 23 * 60]
         low60 = sorted([s for s in daytime60 if s["count"] > 0], key=lambda s: s["count"])[:2]
 
         summary_by_station[gare] = {
@@ -453,13 +465,24 @@ def build_dataset(sncf_df, extra_by_station, date_iso):
     def fr_slot(s):
         return f'{s["start"]}–{s["end"]}'
 
+    if min_minutes is not None:
+        now_h, now_m = min_minutes // 60, min_minutes % 60
+        now_label = f"{now_h:02d}:{now_m:02d}"
+
     for gare, summ in data["summary"].items():
         best60 = summ["bestHour"]
-        if best60:
-            parts = [f'{fr_slot(s)} ({s["count"]} arrivées)' for s in best60[:2]]
-            txt = f"Les créneaux les plus chargés à {gare} sont " + " et ".join(parts) + "."
+        if min_minutes is not None:
+            if best60:
+                parts = [f'{fr_slot(s)} ({s["count"]} arrivées)' for s in best60[:2]]
+                txt = f"Il reste, à partir de {now_label}, les créneaux les plus chargés à {gare} : " + " et ".join(parts) + "."
+            else:
+                txt = f"Plus aucune arrivée grandes lignes prévue à {gare} d'ici la fin de la journée."
         else:
-            txt = f"Aucune arrivée grandes lignes recensée à {gare} aujourd'hui."
+            if best60:
+                parts = [f'{fr_slot(s)} ({s["count"]} arrivées)' for s in best60[:2]]
+                txt = f"Les créneaux les plus chargés à {gare} sont " + " et ".join(parts) + "."
+            else:
+                txt = f"Aucune arrivée grandes lignes recensée à {gare} aujourd'hui."
         if summ["overnightCount"] > 0:
             txt += f" (+{summ['overnightCount']} arrivées de nuit après minuit, comptées à part.)"
         summ["text"] = txt
@@ -471,27 +494,46 @@ def build_dataset(sncf_df, extra_by_station, date_iso):
             if top_combo is None or s["count"] > top_combo["count"]:
                 top_combo = {"gare": gare, **s}
 
-    data["global"] = {
-        "totalAll": sum(data["summary"][g]["total"] for g in STATIONS),
-        "ranking": [{"gare": g, "total": data["summary"][g]["total"]} for g in ranking],
-        "topCombo": top_combo,
-        "text": (
+    total_all = sum(data["summary"][g]["total"] for g in STATIONS)
+    if min_minutes is not None:
+        global_text = (
+            f"Il reste {total_all} arrivées grandes lignes sur les 6 gares à partir de {now_label}. "
+            f"Le pic restant le plus marqué est {top_combo['gare']} entre {top_combo['start']} et "
+            f"{top_combo['end']} avec {top_combo['count']} arrivées."
+        ) if top_combo else f"Plus aucune arrivée grandes lignes prévue sur les 6 gares à partir de {now_label}."
+    else:
+        global_text = (
             f"Sur les 6 gares, le pic d'affluence le plus marqué est {top_combo['gare']} "
             f"entre {top_combo['start']} et {top_combo['end']} avec {top_combo['count']} arrivées."
-        ) if top_combo else "",
+        ) if top_combo else ""
+
+    data["global"] = {
+        "totalAll": total_all,
+        "ranking": [{"gare": g, "total": data["summary"][g]["total"]} for g in ranking],
+        "topCombo": top_combo,
+        "text": global_text,
     }
+    if min_minutes is not None:
+        data["generatedAt"] = now_label
     return data
 
 
 def main():
-    if len(sys.argv) > 1:
+    explicit_date = len(sys.argv) > 1
+    if explicit_date:
         date_obj = datetime.strptime(sys.argv[1], "%Y-%m-%d").replace(tzinfo=PARIS_TZ)
+        min_minutes = None
     else:
         date_obj = datetime.now(PARIS_TZ)
+        min_minutes = date_obj.hour * 60 + date_obj.minute
 
     date_iso = date_obj.strftime("%Y-%m-%d")
     date_gtfs = date_obj.strftime("%Y%m%d")
-    log(f"Génération des données pour le {date_iso} (heure de Paris)")
+    if min_minutes is not None:
+        log(f"Génération des données pour le {date_iso} (heure de Paris) — "
+            f"trains restants à partir de {date_obj.strftime('%H:%M')}")
+    else:
+        log(f"Génération des données pour le {date_iso} (heure de Paris) — journée complète (date explicite)")
 
     dfs = download_gtfs()
     sncf_df = compute_sncf_arrivals(dfs, date_gtfs)
@@ -513,7 +555,7 @@ def main():
         "Paris Gare de Lyon": frecciarossa_rows,
     }
 
-    data = build_dataset(sncf_df, extra_by_station, date_iso)
+    data = build_dataset(sncf_df, extra_by_station, date_iso, min_minutes=min_minutes)
 
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False)
