@@ -2,8 +2,7 @@ name: Mise à jour quotidienne des horaires
 
 on:
   schedule:
-    # PALIER 1 (test) — toutes les 30 min. Remettre "0 4 * * *" après le test.
-    - cron: "*/30 * * * *"
+    - cron: "0 4 * * *"
   workflow_dispatch: {}
 
 permissions:
