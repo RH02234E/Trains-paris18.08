@@ -27,11 +27,6 @@ Reconstruit le fichier data.json de la PWA à partir de plusieurs sources :
    une ligne, celle-ci est simplement ignorée (dégradation silencieuse) sans
    bloquer le reste.
 
-   TEST DE FRÉQUENCE (en cours, voir .github/workflows) : ce script logge
-   désormais explicitement les signes de blocage anti-bot (code HTTP non-200,
-   mots-clés captcha/WAF dans la réponse) pour les distinguer d'un simple
-   changement de mise en page côté eurostar.com. Voir BLOCK_SIGNATURES.
-
 3. Trenitalia Frecciarossa Milan → Paris Gare de Lyon : PAS de scraping (pas de
    page horaires par date comme eurostar.com). Horaire FIXE codé en dur
    (2 trains/jour, confirmé sur trenitalia.com le 03/08/2026), avec une fenêtre
@@ -233,31 +228,12 @@ EUROSTAR_URL_TMPL = (
     "https://www.eurostar.com/fr-fr/voyage/horaires/{code}/8727100/{slug}/paris-gare-du-nord?date={date}"
 )
 
-# Signes qu'on a affaire à une page anti-bot (captcha/WAF) et non aux vraies
-# données horaires. Vérifié AVANT le strip des balises HTML, sur la réponse
-# brute en minuscules.
-BLOCK_SIGNATURES = [
-    "captcha",
-    "awswaf",
-    "access denied",
-    "unusual traffic",
-    "verify you are human",
-    "are you a robot",
-    "request blocked",
-    "recaptcha",
-]
-
 
 def fetch_eurostar_route(date_iso, code, slug):
     """Scrape les horaires d'une ligne Eurostar/Thalys vers Paris Gare du Nord.
     Renvoie une liste de dicts {numero, heure_depart, heure_arrivee, cancelled}
     ou [] en cas d'échec (dégradation silencieuse par ligne : les 3 autres
     lignes et le reste des données ne sont pas affectés).
-
-    Logge explicitement un signe de BLOCAGE (code HTTP non-200, ou mot-clé
-    anti-bot détecté dans la page) séparément d'un simple "0 train trouvé" dû
-    à un changement de mise en page — utile pendant le test de fréquence du
-    cron pour savoir si on se fait bloquer ou pas.
     """
     url = EUROSTAR_URL_TMPL.format(code=code, slug=slug, date=date_iso)
     try:
@@ -266,27 +242,13 @@ def fetch_eurostar_route(date_iso, code, slug):
             timeout=30,
             headers={"User-Agent": "Mozilla/5.0 (compatible; VigietaxiBot/1.0)"},
         )
+        resp.raise_for_status()
     except Exception as exc:
-        log(f"AVERTISSEMENT : échec réseau eurostar.com ({slug}, {exc}). "
+        log(f"AVERTISSEMENT : échec de récupération eurostar.com ({slug}, {exc}). "
             f"Cette ligne sera omise pour cette exécution.")
         return []
 
-    if resp.status_code != 200:
-        log(f"BLOQUÉ ? eurostar.com ({slug}) a répondu HTTP {resp.status_code} "
-            f"(pas 200) — signe probable de blocage anti-bot, pas juste un "
-            f"changement de page. Cette ligne sera omise pour cette exécution.")
-        return []
-
     html = resp.text
-    html_lower = html.lower()
-    hit = next((s for s in BLOCK_SIGNATURES if s in html_lower), None)
-    if hit:
-        log(f"BLOQUÉ ? eurostar.com ({slug}) a répondu HTTP 200 mais la page "
-            f"contient le mot-clé '{hit}' (captcha/anti-bot probable, pas le "
-            f"contenu horaires attendu). Cette ligne sera omise pour cette "
-            f"exécution.")
-        return []
-
     text = re.sub(r"<[^>]+>", " ", html)
     text = re.sub(r"\s+", " ", text)
 
@@ -312,9 +274,8 @@ def fetch_eurostar_route(date_iso, code, slug):
         })
 
     if not results:
-        log(f"AVERTISSEMENT : 0 train extrait pour {slug} (HTTP 200, pas de "
-            f"signe anti-bot détecté) — page probablement changée ou format "
-            f"inattendu. Cette ligne sera omise pour cette exécution.")
+        log(f"AVERTISSEMENT : 0 train extrait pour {slug} — page probablement changée "
+            f"ou format inattendu. Cette ligne sera omise pour cette exécution.")
     else:
         log(f"{slug} : {len(results)} trains extraits (bruts, avant filtrage/dédoublonnage).")
     return results
